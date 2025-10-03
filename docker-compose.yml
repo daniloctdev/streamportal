@@ -2,7 +2,7 @@ services:
   streamportal:
     build: .
     ports:
-      - "8000:8000"
+      - "8000:3005"
     environment:
       - TMDB_API_KEY=${TMDB_API_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
