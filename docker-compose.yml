@@ -7,6 +7,7 @@ services:
       - TMDB_API_KEY=${TMDB_API_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3005,http://localhost:8080}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - APPLICATION_SERVER_PORT=3005
     env_file:
       - .env
     restart: unless-stopped

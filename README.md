@@ -91,12 +91,12 @@ poetry shell
 poetry run uvicorn app.main:app --reload
 
 # Production
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 3005
 ```
 
 ### 5. Access Documentation
-- API Docs: `http://localhost:8000/docs`
-- Health Check: `http://localhost:8000/health`
+- API Docs: `http://localhost:3005/docs`
+- Health Check: `http://localhost:3005/health`
 
 ## 🐳 Docker Deployment
 
@@ -117,7 +117,7 @@ docker-compose up -d
 docker build -t streamportal .
 
 # Run with environment variables
-docker run -p 8000:8000 \
+docker run -p 3005:3005 \
   -e TMDB_API_KEY=your_actual_api_key_here \
   -e ALLOWED_ORIGINS=http://localhost:3000 \
   streamportal
@@ -277,7 +277,7 @@ Add your production domain to `ALLOWED_ORIGINS` in `.env`.
 
 ```javascript
 // 1. Search for movies
-const searchResults = await fetch('http://localhost:8000/search', {
+const searchResults = await fetch('http://localhost:3005/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -290,7 +290,7 @@ const searchResults = await fetch('http://localhost:8000/search', {
 const { results } = await searchResults.json();
 
 // 2. Get details when user clicks
-const details = await fetch('http://localhost:8000/details', {
+const details = await fetch('http://localhost:3005/details', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -313,7 +313,7 @@ const { details: movieDetails } = await details.json();
 | `ALLOWED_ORIGINS` | ❌ | CORS origins (comma-separated) | `http://localhost:3000` |
 | `LOG_LEVEL` | ❌ | Logging level (DEBUG, INFO, WARNING, ERROR) | `INFO` |
 | `HOST` | ❌ | Server host | `0.0.0.0` |
-| `PORT` | ❌ | Server port | `8000` |
+| `PORT` | ❌ | Server port | `3005` |
 
 ### Production Deployment
 
@@ -326,13 +326,13 @@ const { details: movieDetails } = await details.json();
 
 2. **Use Production Server**:
    ```bash
-   poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+   poetry run uvicorn app.main:app --host 0.0.0.0 --port 3005
    ```
 
 3. **Behind Reverse Proxy** (recommended):
    ```nginx
    location /api/ {
-       proxy_pass http://localhost:8000/;
+       proxy_pass http://localhost:3005/;
        proxy_set_header Host $host;
        proxy_set_header X-Real-IP $remote_addr;
        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -345,7 +345,7 @@ const { details: movieDetails } = await details.json();
 
 Monitor API health:
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:3005/health
 ```
 
 ### Log Monitoring
