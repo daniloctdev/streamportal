@@ -18,7 +18,7 @@ RUN poetry install --no-interaction --no-root --without dev
 
 # Using the standard Python image here to have the least possible image size
 FROM python:3.12.0-slim-bookworm AS production-image
-ARG APPLICATION_SERVER_PORT=8000
+ARG APPLICATION_SERVER_PORT=3005
 
     # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
 ENV PYTHONUNBUFFERED=1 \
