@@ -3,6 +3,7 @@
 import os
 import time
 
+import aiohttp
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -93,6 +94,12 @@ class DetailsResponse(BaseModel):
     """Response model for details endpoint."""
 
     details: dict
+
+
+class CatalogResponse(BaseModel):
+    """Response model for catalog endpoint."""
+
+    items: list[dict]
 
 
 app = FastAPI(
@@ -311,3 +318,110 @@ async def get_details(request: DetailsRequest):
             raise
         else:
             raise ExternalAPIError(f"Failed to get details: {e!s}", "TMDB API")
+
+
+@app.get("/catalog/{content_type}")
+async def get_catalog(content_type: str, lang: str | None = None):
+    """Get catalog list from vixsrc.to API.
+
+    This endpoint fetches catalog items from vixsrc.to for movies,
+    TV shows, or episodes. Type must be one of: movie, tv, episode.
+    Language parameter is optional.
+    """
+    logger.info(
+        f"Catalog request: type={content_type}, lang={lang}",
+        extra_fields={
+            "content_type": content_type,
+            "language": lang,
+        },
+    )
+
+    # Validate content type
+    valid_types = ["movie", "tv", "episode"]
+    if content_type not in valid_types:
+        logger.warning(
+            f"Invalid catalog type: {content_type}",
+            extra_fields={"content_type": content_type, "valid_types": valid_types},
+        )
+        raise ExternalAPIError(
+            f"Invalid type. Must be one of: {', '.join(valid_types)}",
+            "vixsrc.to API",
+            400,
+        )
+
+    try:
+        # Build the URL
+        url = f"https://vixsrc.to/api/list/{content_type}"
+        if lang:
+            url += f"?lang={lang}"
+
+        logger.debug(
+            f"Fetching catalog from vixsrc.to: {url}",
+            extra_fields={"url": url},
+        )
+
+        # Make request to vixsrc.to API
+        async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with session.get(url, timeout=timeout) as response:
+                if response.status != 200:
+                    logger.error(
+                        f"vixsrc.to API returned status {response.status}",
+                        extra_fields={
+                            "status_code": response.status,
+                            "url": url,
+                        },
+                    )
+                    raise ExternalAPIError(
+                        f"vixsrc.to API returned status {response.status}",
+                        "vixsrc.to API",
+                        response.status,
+                    )
+
+                data = await response.json()
+
+                # vixsrc.to API returns array directly or wrapped in an object
+                # Handle both cases
+                if isinstance(data, list):
+                    items = data
+                elif isinstance(data, dict) and "items" in data:
+                    items = data["items"]
+                elif isinstance(data, dict) and "data" in data:
+                    items = data["data"]
+                else:
+                    items = [data] if data else []
+
+                logger.info(
+                    f"Catalog retrieved successfully: {len(items)} items found",
+                    extra_fields={
+                        "content_type": content_type,
+                        "item_count": len(items),
+                    },
+                )
+
+                return CatalogResponse(items=items)
+
+    except aiohttp.ClientError as e:
+        logger.error(
+            f"Network error fetching catalog: {e!s}",
+            extra_fields={
+                "content_type": content_type,
+                "error_type": type(e).__name__,
+            },
+        )
+        raise ExternalAPIError(
+            f"Failed to connect to vixsrc.to: {e!s}", "vixsrc.to API"
+        )
+    except Exception as e:
+        logger.error(
+            f"Catalog retrieval failed: {e!s}",
+            extra_fields={
+                "content_type": content_type,
+                "error_type": type(e).__name__,
+            },
+        )
+        if isinstance(e, StreamPortalError):
+            raise
+        else:
+            raise ExternalAPIError(f"Failed to get catalog: {e!s}", "vixsrc.to API")
+

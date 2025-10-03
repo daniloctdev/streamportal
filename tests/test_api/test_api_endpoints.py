@@ -519,3 +519,192 @@ class TestInputSanitization:
 
             # Should either accept sanitized input or reject it
             assert response.status_code in [200, 400]
+
+
+class TestCatalogEndpoint:
+    """Test catalog endpoint for vixsrc.to API."""
+
+    def test_catalog_movies_success(self, test_client: TestClient):
+        """Test successful movie catalog retrieval."""
+        mock_data = [
+            {"id": 1, "title": "Movie 1", "year": 2023},
+            {"id": 2, "title": "Movie 2", "year": 2024},
+        ]
+
+        class MockResponse:
+            status = 200
+
+            async def json(self):
+                return mock_data
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class MockSession:
+            def get(self, *args, **kwargs):
+                return MockResponse()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        with patch("aiohttp.ClientSession", return_value=MockSession()):
+            response = test_client.get("/catalog/movie")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "items" in data
+            assert len(data["items"]) == 2
+            assert data["items"][0]["title"] == "Movie 1"
+
+    def test_catalog_tv_with_lang(self, test_client: TestClient):
+        """Test TV catalog retrieval with language parameter."""
+        mock_data = [
+            {"id": 1, "name": "Series 1"},
+            {"id": 2, "name": "Series 2"},
+        ]
+
+        class MockResponse:
+            status = 200
+
+            async def json(self):
+                return mock_data
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class MockSession:
+            def get(self, *args, **kwargs):
+                return MockResponse()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        with patch("aiohttp.ClientSession", return_value=MockSession()):
+            response = test_client.get("/catalog/tv?lang=it")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "items" in data
+            assert len(data["items"]) == 2
+
+    def test_catalog_invalid_type(self, test_client: TestClient):
+        """Test catalog with invalid content type."""
+        response = test_client.get("/catalog/invalid")
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data
+
+    def test_catalog_episode_success(self, test_client: TestClient):
+        """Test episode catalog retrieval."""
+        mock_data = [{"id": 1, "episode": "E01"}]
+
+        class MockResponse:
+            status = 200
+
+            async def json(self):
+                return mock_data
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class MockSession:
+            def get(self, *args, **kwargs):
+                return MockResponse()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        with patch("aiohttp.ClientSession", return_value=MockSession()):
+            response = test_client.get("/catalog/episode")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "items" in data
+            assert len(data["items"]) == 1
+
+    def test_catalog_api_error(self, test_client: TestClient):
+        """Test catalog when vixsrc.to API fails."""
+
+        class MockResponse:
+            status = 500
+
+            async def json(self):
+                return {"error": "Internal Server Error"}
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class MockSession:
+            def get(self, *args, **kwargs):
+                return MockResponse()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        with patch("aiohttp.ClientSession", return_value=MockSession()):
+            response = test_client.get("/catalog/movie")
+
+            assert response.status_code == 500
+            data = response.json()
+            assert "error" in data
+
+    def test_catalog_wrapped_data(self, test_client: TestClient):
+        """Test catalog when API returns wrapped data."""
+        mock_data = {"items": [{"id": 1, "title": "Movie"}]}
+
+        class MockResponse:
+            status = 200
+
+            async def json(self):
+                return mock_data
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class MockSession:
+            def get(self, *args, **kwargs):
+                return MockResponse()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        with patch("aiohttp.ClientSession", return_value=MockSession()):
+            response = test_client.get("/catalog/movie")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "items" in data
+            assert len(data["items"]) == 1
+
+
