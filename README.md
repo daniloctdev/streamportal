@@ -224,6 +224,47 @@ Get detailed information for a specific movie or series, including streaming ava
 }
 ```
 
+### 3. List Catalog Endpoint (`GET /catalog/{type}`)
+
+Get catalog list from vixsrc.to API for movies, TV shows, or episodes.
+
+**Parameters:**
+- `type` (path parameter, required): Content type - must be one of: `movie`, `tv`, or `episode`
+- `lang` (query parameter, optional): Language code (e.g., `it`, `en`, `es`)
+
+**Example Requests:**
+```bash
+GET /catalog/movie
+GET /catalog/tv?lang=it
+GET /catalog/episode?lang=en
+```
+
+**Response:**
+```json
+{
+    "items": [
+        {
+            "id": 123,
+            "title": "Movie Title",
+            "year": 2023,
+            "poster": "https://example.com/poster.jpg",
+            ...
+        },
+        {
+            "id": 456,
+            "title": "Another Movie",
+            "year": 2024,
+            ...
+        }
+    ]
+}
+```
+
+**Notes:**
+- This endpoint fetches catalog data directly from the vixsrc.to API
+- The structure of items in the response depends on the vixsrc.to API response format
+- Language parameter is passed to vixsrc.to if provided
+
 ## 🛡️ Error Management
 
 ### Structured Error Responses
@@ -301,6 +342,10 @@ const details = await fetch('http://localhost:3005/details', {
 });
 
 const { details: movieDetails } = await details.json();
+
+// 3. Get catalog list
+const catalog = await fetch('http://localhost:3005/catalog/movie?lang=it');
+const { items } = await catalog.json();
 ```
 
 ## 🔧 Configuration
