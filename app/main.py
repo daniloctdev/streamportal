@@ -321,11 +321,12 @@ async def get_details(request: DetailsRequest):
 
 
 @app.get("/catalog/{content_type}")
-async def get_catalog(content_type: str, lang: str = None):
+async def get_catalog(content_type: str, lang: str | None = None):
     """Get catalog list from vixsrc.to API.
 
-    This endpoint fetches catalog items from vixsrc.to for movies, TV shows, or episodes.
-    Type must be one of: movie, tv, episode. Language parameter is optional.
+    This endpoint fetches catalog items from vixsrc.to for movies,
+    TV shows, or episodes. Type must be one of: movie, tv, episode.
+    Language parameter is optional.
     """
     logger.info(
         f"Catalog request: type={content_type}, lang={lang}",
@@ -361,7 +362,8 @@ async def get_catalog(content_type: str, lang: str = None):
 
         # Make request to vixsrc.to API
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with session.get(url, timeout=timeout) as response:
                 if response.status != 200:
                     logger.error(
                         f"vixsrc.to API returned status {response.status}",
